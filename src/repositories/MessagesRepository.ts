@@ -2,7 +2,7 @@ import { Column, Model, Table } from 'sequelize-typescript';
 import { Injectable } from '@nestjs/common';
 
 @Table({ tableName: 'Messages' })
-export class Message extends Model {
+export class MessageModel extends Model {
   @Column
   id: string;
   @Column
@@ -15,5 +15,21 @@ export class Message extends Model {
   attachmentUrl: string;
 }
 
+@Table({ tableName: 'Chats' })
+export class ChatModel extends Model {
+  @Column
+  id: string;
+  @Column
+  chatId: string;
+}
+
 @Injectable()
-export class MessageRepository {}
+export class MessagesRepository {
+  async getChatById(id: string) {
+    return ChatModel.findOne({ where: { id } });
+  }
+
+  async createChat(id: string, chatId: string) {
+    return ChatModel.create({ id, chatId });
+  }
+}

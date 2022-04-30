@@ -2,71 +2,95 @@ import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { NewMessage, NewMessageEvent } from 'telegram/events';
 
-enum TELEGRAM_STATE {
-  NOT_INITIALIZED,
-  NEED_CODE,
-  NEED_PASSWORD,
-  WORKING,
-  FAILED,
+export enum TELEGRAM_STATE {
+  NOT_INITIALIZED = 'NOT_INITIALIZED',
+  NEED_CODE = 'NEED_CODE',
+  NEED_PASSWORD = 'NEED_PASSWORD',
+  WORKING = 'WORKING',
+  FAILED = 'FAILED',
 }
 
-const MAP_REQ = ['PHONE', 'CODE', 'PASSWORD'];
+export const CHANNEL_NAME = 'TELEGRAM';
+
+const apiId = process.env.API_ID;
+const apiHash = process.env.API_HASH;
 
 export class Instance {
   private client: TelegramClient;
 
+  listener = null;
   state = TELEGRAM_STATE.NOT_INITIALIZED;
-  apiId = 3242840;
-  apiHash = 'a3e9f2da2f96a5f4225603e2c754139f';
-  stringSession = new StringSession(``); // fill this later with the value from session.save()
+  private stringSession: StringSession;
 
   async getAuthPromise(type: TELEGRAM_STATE): Promise<string> {
-    console.log(`state is ${MAP_REQ[type]}`);
+    console.log(`state is ${type}`);
     this.state = type;
     const promiseValue = await new Promise<string>((resolve) => {
-      this.promiseStack.push(resolve);
+      this.promiseStack.push((value) => {
+        this.state = type;
+        resolve(value);
+      });
     });
     return promiseValue;
   }
 
   promiseStack: object[] = [];
 
-  async initClient() {
-    this.client = new TelegramClient(
-      this.stringSession,
-      this.apiId,
-      this.apiHash,
-      {
-        connectionRetries: 5,
-      },
-    );
-    this.client.start({
-      phoneNumber: () => this.getAuthPromise(TELEGRAM_STATE.NOT_INITIALIZED),
-      password: () => this.getAuthPromise(TELEGRAM_STATE.NEED_PASSWORD),
-      phoneCode: () => this.getAuthPromise(TELEGRAM_STATE.NEED_CODE),
-      onError: (err) => console.log(err),
+  async initClient(authString = ''): Promise<string> {
+    return new Promise((resolve) => {
+      this.stringSession = new StringSession(authString);
+
+      this.client = new TelegramClient(
+        this.stringSession,
+        parseInt(apiId),
+        apiHash,
+        {
+          connectionRetries: 5,
+        },
+      );
+      this.client
+        .start({
+          phoneNumber: () =>
+            this.getAuthPromise(TELEGRAM_STATE.NOT_INITIALIZED),
+          password: () => this.getAuthPromise(TELEGRAM_STATE.NEED_PASSWORD),
+          phoneCode: () => this.getAuthPromise(TELEGRAM_STATE.NEED_CODE),
+          onError: (err) => console.log(err),
+        })
+        .then(async () => {
+          console.log('Instance is working');
+          this.state = TELEGRAM_STATE.WORKING;
+          const authString = await this.saveSession();
+          await this.addEventListener();
+          resolve(authString);
+        });
     });
-    this.addEventListener()
   }
 
   async addEventListener() {
-    this.client.addEventHandler(this.eventPrint, new NewMessage({}));
+    this.client.addEventHandler(this.eventPrint.bind(this), new NewMessage({}));
+  }
+
+  async setListener(listener) {
+    this.listener = listener;
   }
 
   async eventPrint(event: NewMessageEvent) {
     const message = event.message;
     if (event.isPrivate) {
-      // prints sender id
-      console.log(message.senderId);
-      // read message
-      console.log(message);
-      // if (message.text == 'hello') {
-      //   const sender = await message.getSender();
-      //   console.log('sender is', sender);
-      //   await client.sendMessage(sender, {
-      //     message: `hi your id is ${message.senderId}`,
-      //   });
-      // }
+      if (!message.media) {
+        console.log(message.date);
+        console.log(message.message);
+        // @ts-ignore
+        const { userId } = message._chatPeer;
+        console.log(userId);
+        if (this.listener) {
+          this.listener({
+            date: message.date,
+            message: message.message,
+            userId,
+          });
+        }
+      }
     }
   }
 
@@ -74,8 +98,11 @@ export class Instance {
     await this.client.sendMessage('me', { message: 'Hello!' });
   }
 
-  async saveSession() {
-    await this.client.session.save();
+  async saveSession(): Promise<string> {
+    // @ts-ignore
+    const session: string = this.client.session.save();
+    console.log(session);
+    return session;
   }
 
   async pushAuth(value: string) {
@@ -84,7 +111,7 @@ export class Instance {
     resolver(value);
   }
 
-  async getState() {
-    return MAP_REQ[this.state];
+  getState() {
+    return this.state;
   }
 }

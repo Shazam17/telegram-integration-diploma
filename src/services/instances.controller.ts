@@ -1,32 +1,58 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { Instance } from '../entities/Instance';
+import {
+  CreateInstanceInput,
+  CreateInstanceUsecase,
+} from '../domain/usecases/create-instance';
+import { InstancesRepository } from '../repositories/InstancesRepository';
+import { PushAuthInput, PushAuthUsecase } from '../domain/usecases/push-auth';
+import {
+  GetInstanceStateUsecase,
+  GetStateInput,
+} from '../domain/usecases/get-instance-state';
+import {
+  SendMessageInput,
+  SendMessageUsecase,
+} from '../domain/usecases/send-message';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { EVENT_QUEUE_NAME } from '../shared/constants';
 
 @Controller()
 export class InstancesController {
-  private instances: Instance[];
-
-  constructor() {
-    this.instances = [];
+  constructor(
+    private instances: InstancesRepository,
+    @InjectQueue(EVENT_QUEUE_NAME) private eventsQueue: Queue,
+  ) {
+    this.instances.revokeAllWorkingInstances(this.eventsQueue);
   }
 
   @Post('/new-instance')
-  public async newInstance(@Body() body: object) {
-    const instance = new Instance();
-    await instance.initClient();
-    this.instances.push(instance);
-    return true;
+  public async newInstance(@Body() input: CreateInstanceInput) {
+    const usecase = new CreateInstanceUsecase(this.instances, this.eventsQueue);
+    return usecase.execute(input);
   }
 
   @Post('/push-auth')
-  public async pushAuth(@Body() body: object) {
-    // @ts-ignore
-    await this.instances[0].pushAuth(body.value);
-    return true;
+  public async pushAuth(@Body() input: PushAuthInput) {
+    const usecase = new PushAuthUsecase(this.instances);
+    return usecase.execute(input);
   }
 
   @Post('/get-state')
-  public async getState(@Body() body: object) {
-    // @ts-ignore
-    return this.instances[0].getState();
+  public async getState(@Body() input: GetStateInput) {
+    const usecase = new GetInstanceStateUsecase(this.instances);
+    return usecase.execute(input);
   }
+
+  @Post('/send-message')
+  public async sendMessage(@Body() input: SendMessageInput) {
+    const usecase = new SendMessageUsecase(this.instances);
+    return usecase.execute(input);
+  }
+
+  @Post('/revoke-instance')
+  public async revokeInstance() {}
+
+  @Post('/revoke-instance-by-id')
+  public async revokeInstanceById() {}
 }
