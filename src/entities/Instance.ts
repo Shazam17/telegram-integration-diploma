@@ -21,6 +21,11 @@ export class Instance {
   listener = null;
   state = TELEGRAM_STATE.NOT_INITIALIZED;
   private stringSession: StringSession;
+  private id: string;
+
+  constructor(id: string) {
+    this.id = id;
+  }
 
   async getAuthPromise(type: TELEGRAM_STATE): Promise<string> {
     console.log(`state is ${type}`);
@@ -90,15 +95,16 @@ export class Instance {
             chatId: userId,
             senderId: message.senderId,
             out: message.out,
-            userId: message.client._selfInputPeer.userId
+            userId: message.client._selfInputPeer.userId,
+            instanceId: this.id,
           });
         }
       }
     }
   }
 
-  async sendMessage() {
-    await this.client.sendMessage('me', { message: 'Hello!' });
+  async sendMessage(chatId: string, message: string) {
+    await this.client.sendMessage(chatId, { message });
   }
 
   async saveSession(): Promise<string> {

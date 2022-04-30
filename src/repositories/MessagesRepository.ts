@@ -23,6 +23,8 @@ export class ChatModel extends Model {
   id: string;
   @Column
   chatId: string;
+  @Column
+  instanceId: string;
 }
 
 @Table({ tableName: 'Users' })
@@ -36,15 +38,27 @@ export class UserModel extends Model {
 
 @Injectable()
 export class MessagesRepository {
-  async getChatById(id: string): Promise<ChatModel> {
+  async getChatByChatId(id: string): Promise<ChatModel> {
     return ChatModel.findOne({ where: { chatId: id } });
   }
 
-  async createChat(id: string, chatId: string) {
-    return ChatModel.create({ id, chatId }).catch(console.log);
+  async getChatById(id: string): Promise<ChatModel> {
+    return ChatModel.findOne({ where: { id } });
+  }
+
+  async createChat(id: string, chatId: string, instanceId: string) {
+    const found = await ChatModel.findOne({ where: { chatId, instanceId } });
+    if (found) {
+      return found;
+    }
+    return ChatModel.create({ id, chatId, instanceId }).catch(console.log);
   }
 
   async createUser(id: string, telegramId: string) {
+    const found = await UserModel.findOne({ where: { telegramId } });
+    if (found) {
+      return found;
+    }
     return UserModel.create({ id, telegramId });
   }
 

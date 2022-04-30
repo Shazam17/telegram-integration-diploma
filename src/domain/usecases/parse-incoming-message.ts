@@ -10,6 +10,7 @@ export class ParseIncomingMessageInput {
   out: boolean;
   message: string;
   date: number;
+  instanceId: string;
 }
 
 export class ParseIncomingMessageUsecase {
@@ -20,8 +21,8 @@ export class ParseIncomingMessageUsecase {
 
   async execute(input: ParseIncomingMessageInput) {
     try {
-      await this.messages.createChat(uuidv4(), input.chatId);
-      const chat = await this.messages.getChatById(input.chatId);
+      await this.messages.createChat(uuidv4(), input.chatId, input.instanceId);
+      const chat = await this.messages.getChatByChatId(input.chatId);
       const fromUser = input.out ? input.userId : input.chatId;
       const toUser = input.out ? input.chatId : input.userId;
 

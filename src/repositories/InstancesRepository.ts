@@ -32,7 +32,7 @@ export class InstancesRepository implements OnModuleInit {
       where: { state: TELEGRAM_STATE.WORKING },
     });
     models.map(async (item) => {
-      const instance = new Instance();
+      const instance = new Instance(item.id);
       await instance.setListener((data) => {
         queue.add(data);
       });
@@ -48,7 +48,7 @@ export class InstancesRepository implements OnModuleInit {
     if (!model) {
       return;
     }
-    const instance = new Instance();
+    const instance = new Instance(model.id);
     await instance.initClient(model.authString);
     this.instances.set(model.id, instance);
   }
@@ -58,14 +58,14 @@ export class InstancesRepository implements OnModuleInit {
     if (!model) {
       return;
     }
-    const instance = new Instance();
+    const instance = new Instance(model.id);
     await instance.initClient(model.authString);
     this.instances.set(model.id, instance);
   }
 
   async createInstance(userId: string, queue: Queue) {
-    const instance = new Instance();
     const id = uuidv4();
+    const instance = new Instance(id);
     await instance.setListener((data) => queue.add(data));
     instance.initClient().then(async (authString: string) => {
       const model = await InstanceModel.findOne({ where: { id } });
@@ -133,6 +133,10 @@ export class InstancesRepository implements OnModuleInit {
 
   getInstance(id: string): Promise<InstanceModel> {
     return InstanceModel.findOne({ where: { id } });
+  }
+
+  getRawInstance(id: string): Instance {
+    return this.instances.get(id);
   }
 
   getAllUserInstances(userId: string) {}

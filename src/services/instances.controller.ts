@@ -16,11 +16,13 @@ import {
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { EVENT_QUEUE_NAME } from '../shared/constants';
+import { MessagesRepository } from '../repositories/MessagesRepository';
 
 @Controller()
 export class InstancesController {
   constructor(
     private instances: InstancesRepository,
+    private messages: MessagesRepository,
     @InjectQueue(EVENT_QUEUE_NAME) private eventsQueue: Queue,
   ) {
     this.instances.revokeAllWorkingInstances(this.eventsQueue);
@@ -46,7 +48,7 @@ export class InstancesController {
 
   @Post('/send-message')
   public async sendMessage(@Body() input: SendMessageInput) {
-    const usecase = new SendMessageUsecase(this.instances);
+    const usecase = new SendMessageUsecase(this.instances, this.messages);
     return usecase.execute(input);
   }
 

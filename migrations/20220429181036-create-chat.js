@@ -11,6 +11,9 @@ module.exports = {
       chatId: {
         type: Sequelize.STRING,
       },
+      instanceId: {
+        type: Sequelize.UUID,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
