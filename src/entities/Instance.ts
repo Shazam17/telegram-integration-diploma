@@ -87,7 +87,10 @@ export class Instance {
           this.listener({
             date: message.date,
             message: message.message,
-            userId,
+            chatId: userId,
+            senderId: message.senderId,
+            out: message.out,
+            userId: message.client._selfInputPeer.userId
           });
         }
       }

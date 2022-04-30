@@ -6,9 +6,9 @@ import {
   InstanceModel,
   InstancesRepository,
 } from './repositories/InstancesRepository';
-import { MessagesRepository } from './repositories/MessagesRepository';
+import {ChatModel, MessageModel, MessagesRepository, UserModel} from './repositories/MessagesRepository';
 import { BullModule } from '@nestjs/bull';
-import { QueueConsumer } from './queue/consumer';
+import { QueueConsumer } from './infrastructure/queue/consumer';
 import { EVENT_QUEUE_NAME } from './shared/constants';
 import { ConfigModule } from '@nestjs/config';
 @Module({
@@ -20,7 +20,7 @@ import { ConfigModule } from '@nestjs/config';
       username: 'admin',
       password: 'password',
       database: 'telegram_db',
-      models: [InstanceModel],
+      models: [InstanceModel, ChatModel, MessageModel, UserModel],
     }),
     BullModule.forRoot({
       redis: {
