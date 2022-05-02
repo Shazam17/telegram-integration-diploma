@@ -46,6 +46,7 @@ export class ParseIncomingMessageUsecase {
           chat,
           external_user_id: input.external_user_id,
           type: CHANEL_NAME,
+          instanceId: input.instanceId,
         })
         .catch((axiosError) => console.log(axiosError.response));
     } catch (e) {
