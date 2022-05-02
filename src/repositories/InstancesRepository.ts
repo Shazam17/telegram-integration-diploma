@@ -15,6 +15,8 @@ export class InstanceModel extends Model {
   phoneNumber: string;
   @Column
   state: string;
+  @Column
+  userId: string;
 }
 
 @Injectable()
@@ -32,7 +34,7 @@ export class InstancesRepository implements OnModuleInit {
       where: { state: TELEGRAM_STATE.WORKING },
     });
     models.map(async (item) => {
-      const instance = new Instance(item.id);
+      const instance = new Instance(item.id, item.userId);
       await instance.setListener((data) => {
         queue.add(data);
       });
@@ -48,7 +50,7 @@ export class InstancesRepository implements OnModuleInit {
     if (!model) {
       return;
     }
-    const instance = new Instance(model.id);
+    const instance = new Instance(model.id, model.userId);
     await instance.initClient(model.authString);
     this.instances.set(model.id, instance);
   }
@@ -58,14 +60,14 @@ export class InstancesRepository implements OnModuleInit {
     if (!model) {
       return;
     }
-    const instance = new Instance(model.id);
+    const instance = new Instance(model.id, model.userId);
     await instance.initClient(model.authString);
     this.instances.set(model.id, instance);
   }
 
   async createInstance(userId: string, queue: Queue) {
     const id = uuidv4();
-    const instance = new Instance(id);
+    const instance = new Instance(id, userId);
     await instance.setListener((data) => queue.add(data));
     instance.initClient().then(async (authString: string) => {
       const model = await InstanceModel.findOne({ where: { id } });
@@ -84,7 +86,7 @@ export class InstancesRepository implements OnModuleInit {
       phoneNumber: '',
     });
     this.instances.set(instanceModel.id, instance);
-    return instanceModel.id;
+    return { instanceId: instanceModel.id };
   }
 
   async pushAuth(id: string, state: string, value: string) {

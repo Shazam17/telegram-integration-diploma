@@ -2,6 +2,7 @@ import { InstancesRepository } from '../../repositories/InstancesRepository';
 import { MessagesRepository } from '../../repositories/MessagesRepository';
 import { v4 as uuidv4 } from 'uuid';
 import { httpTransport } from '../../infrastructure/event-transports/http-transport';
+import { CHANEL_NAME } from '../../shared/constants';
 
 export class ParseIncomingMessageInput {
   userId: string;
@@ -11,6 +12,7 @@ export class ParseIncomingMessageInput {
   message: string;
   date: number;
   instanceId: string;
+  external_user_id: string;
 }
 
 export class ParseIncomingMessageUsecase {
@@ -42,8 +44,10 @@ export class ParseIncomingMessageUsecase {
         .post('/notify', {
           message,
           chat,
+          external_user_id: input.external_user_id,
+          type: CHANEL_NAME,
         })
-        .catch(console.log);
+        .catch((axiosError) => console.log(axiosError.response));
     } catch (e) {
       console.log(e);
     }

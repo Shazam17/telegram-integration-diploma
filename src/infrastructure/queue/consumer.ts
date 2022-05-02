@@ -26,4 +26,5 @@ export class QueueConsumer {
     );
     await usecase.execute(job.data as ParseIncomingMessageInput);
   }
+
 }

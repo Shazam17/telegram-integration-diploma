@@ -19,6 +19,6 @@ export class GetInstanceStateUsecase {
       //TODO:
     }
 
-    return instance.state;
+    return { state: instance.state };
   }
 }
