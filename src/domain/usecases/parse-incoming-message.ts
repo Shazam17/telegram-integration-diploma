@@ -23,7 +23,7 @@ export class ParseIncomingMessageUsecase {
 
   async execute(input: ParseIncomingMessageInput) {
     try {
-      await this.messages.createChat(uuidv4(), input.chatId, input.instanceId);
+      await this.messages.createChat(input.chatId, input.instanceId);
       const chat = await this.messages.getChatByChatId(input.chatId);
       const fromUser = input.out ? input.userId : input.chatId;
       const toUser = input.out ? input.chatId : input.userId;

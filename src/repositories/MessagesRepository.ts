@@ -1,5 +1,8 @@
 import { Column, Model, PrimaryKey, Table } from 'sequelize-typescript';
 import { Injectable } from '@nestjs/common';
+import { v5 as uuidv5 } from 'uuid';
+
+const NAMESPACE = '94061970-aac9-4394-a209-2cfdd83902a8';
 
 @Table({ tableName: 'Messages' })
 export class MessageModel extends Model {
@@ -46,8 +49,9 @@ export class MessagesRepository {
     return ChatModel.findOne({ where: { id } });
   }
 
-  async createChat(id: string, chatId: string, instanceId: string) {
-    const found = await ChatModel.findOne({ where: { chatId, instanceId } });
+  async createChat(chatId: string, instanceId: string) {
+    const id = uuidv5(`${chatId}-${instanceId}`, NAMESPACE);
+    const found = await ChatModel.findOne({ where: { id } });
     if (found) {
       return found;
     }
